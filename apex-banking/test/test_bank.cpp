@@ -102,3 +102,21 @@ TEST_CASE("lock / unlock pair and DoubleSpendDetected on second lock") {
     b.lock(a.getId());  // reacquiring after unlock is fine
     b.unlock(a.getId());
 }
+
+TEST_CASE("simulateDoubleSpend produces DoubleSpendDetected ledger entry") {
+    Bank b = makeSeededBank();
+    Account& a = b.createSavings("A", "USD", Money{100.0, "USD"}, 0.0);
+    b.simulateDoubleSpend(a.getId(), 80.0);
+    // Phase 2 attempts a second lock which throws DoubleSpendDetected —
+    // the simulation catches it and logs a FAILED WITHDRAW with that message.
+    auto log = b.ledgerEntries();
+    bool sawDoubleSpendDetected = false;
+    for (const auto& tx : log) {
+        if (tx.status() == TxStatus::FAILED &&
+            tx.note().find("already locked") != std::string::npos) {
+            sawDoubleSpendDetected = true;
+            break;
+        }
+    }
+    CHECK(sawDoubleSpendDetected);
+}

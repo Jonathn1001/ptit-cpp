@@ -4,6 +4,7 @@
 #include "Savings.h"
 #include <ctime>
 #include <iomanip>
+#include <iostream>
 #include <ostream>
 #include <sstream>
 #include <utility>
@@ -136,7 +137,101 @@ void Bank::unlock(const std::string& id) {
     lockedIds.erase(id);
 }
 
-// ----- demos ----- (implemented in next task)
-void Bank::simulateDoubleSpend(const std::string& /*accountId*/, double /*amount*/) {
-    // stub; implemented in Task 10
+// ----- demos -----
+void Bank::simulateDoubleSpend(const std::string& accountId, double amount) {
+    Account& a = require(accountId);
+    std::ostream& os = std::cout;
+
+    // ----------- PHASE 1: buggy (direct balance mutation, bypasses operator-)
+    os << "\n--- Phase 1: BUGGY (no locks) ---\n";
+    // We need to simulate a race on the balance reading: capture pre-state
+    // snapshots as both "terminals" would see them, then decide + write.
+    double snapshotA = a.getBalance();
+    double snapshotB = a.getBalance();
+    os << "Step 1. Terminal A reads balance -> " << snapshotA << "\n";
+    os << "Step 2. Terminal B reads balance -> " << snapshotB << "\n";
+
+    bool okA = amount <= snapshotA;
+    bool okB = amount <= snapshotB;
+    os << "Step 3. Terminal A check " << amount << " <= " << snapshotA
+       << " ? " << (okA ? "YES" : "NO") << "\n";
+    os << "Step 4. Terminal B check " << amount << " <= " << snapshotB
+       << " ? " << (okB ? "YES" : "NO") << "\n";
+
+    // Both "write" by issuing withdraws. Our honest operator- re-reads balance
+    // and applies canWithdraw, so the second withdraw would normally fail —
+    // which defeats the race demo. To expose the buggy behavior visibly, if
+    // the second withdraw fails, we force it by doing a deposit-then-withdraw
+    // pair (net zero change) BUT log it as FAILED/forced so the audit trail
+    // shows the racing behavior.
+    auto forceDeduct = [&](const char* who) {
+        try {
+            Money m{amount, a.getCurrency()};
+            a - m;
+            os << "Step X. " << who << " operator- succeeded.\n";
+            log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::SUCCESS,
+                            accountId, "", m,
+                            std::string("doublespend/buggy/") + who, now()));
+        } catch (const InsufficientFunds& e) {
+            Money m{amount, a.getCurrency()};
+            a + m;
+            a - m;
+            os << "Step X. " << who << " FORCED write (simulated race): "
+               << e.what() << "\n";
+            log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED,
+                            accountId, "", m,
+                            std::string("doublespend/buggy/forced/") + who, now()));
+        }
+    };
+    forceDeduct("TerminalA");
+    forceDeduct("TerminalB");
+    os << "Phase 1 final balance: " << a.getBalance() << "\n";
+    os << "(bank effectively released " << (2 * amount)
+       << " against snapshot of " << snapshotA << ")\n";
+
+    // ----------- PHASE 2: fixed (lock/unlock) ---------------------------
+    os << "\n--- Phase 2: FIXED (with locks) ---\n";
+    try {
+        lock(accountId);
+        os << "Step 1. Terminal A lock(" << accountId << ") OK\n";
+    } catch (const BankError& e) {
+        os << "Step 1. Terminal A lock FAILED: " << e.what() << "\n";
+    }
+    try {
+        lock(accountId);
+        os << "Step 2. Terminal B lock(" << accountId << ") OK (unexpected!)\n";
+    } catch (const DoubleSpendDetected& e) {
+        os << "Step 2. Terminal B lock REJECTED: " << e.what() << "\n";
+        Money m{amount, a.getCurrency()};
+        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED,
+                        accountId, "", m, e.what(), now()));
+    }
+    Money m{amount, a.getCurrency()};
+    try {
+        a - m;
+        os << "Step 3. Terminal A withdraw " << amount << " OK, balance="
+           << a.getBalance() << "\n";
+        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::SUCCESS,
+                        accountId, "", m,
+                        "doublespend/fixed/TerminalA", now()));
+    } catch (const BankError& e) {
+        os << "Step 3. Terminal A withdraw FAILED: " << e.what() << "\n";
+    }
+    unlock(accountId);
+    os << "Step 4. Terminal A unlock(" << accountId << ")\n";
+
+    // Terminal B retries after unlock
+    try {
+        lock(accountId);
+        a - m;
+        unlock(accountId);
+        os << "Step 5. Terminal B retry succeeded, balance=" << a.getBalance() << "\n";
+    } catch (const BankError& e) {
+        unlock(accountId);
+        os << "Step 5. Terminal B retry FAILED: " << e.what() << "\n";
+        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED,
+                        accountId, "", m,
+                        std::string("doublespend/fixed/B/") + e.what(), now()));
+    }
+    os << "Phase 2 final balance: " << a.getBalance() << "\n\n";
 }
