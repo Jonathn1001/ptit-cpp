@@ -101,8 +101,8 @@ void Bank::transfer(const std::string& fromId, const std::string& toId, const Mo
 void Bank::setRate(const std::string& code, double rate) {
     try {
         registry.setRate(code, rate);
-        // Successful rate changes are not journaled to keep the ledger
-        // focused on account-level events; only failures are recorded.
+        log(Transaction(allocTxId(), TxType::SET_RATE, TxStatus::SUCCESS,
+                        "", "", Money{rate, code}, "", now()));
     } catch (const BankError& e) {
         log(Transaction(allocTxId(), TxType::SET_RATE, TxStatus::FAILED,
                         "", "", Money{rate, code}, e.what(), now()));

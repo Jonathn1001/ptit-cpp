@@ -41,9 +41,12 @@ TEST_CASE("deposit updates balance and logs a SUCCESS tx") {
     b.deposit(a.getId(), m);
     CHECK(a.getBalance() == doctest::Approx(150.0));
     auto log = b.ledgerEntries();
-    CHECK(log.size() == 2);  // CREATE_ACCOUNT + DEPOSIT
+    // Seeded bank adds 2x SET_RATE SUCCESS before this test, so absolute size varies.
+    // Assert on the tail instead.
+    REQUIRE(log.size() >= 2);
     CHECK(log.back().type() == TxType::DEPOSIT);
     CHECK(log.back().status() == TxStatus::SUCCESS);
+    CHECK(log[log.size() - 2].type() == TxType::CREATE_ACCOUNT);
 }
 
 TEST_CASE("withdraw failure is still logged as FAILED") {
