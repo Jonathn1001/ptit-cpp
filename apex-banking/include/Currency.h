@@ -26,5 +26,6 @@ public:
     Money convert(const Money& from, const std::string& toCurrency) const;
 
     bool has(const std::string& code) const;
+    /** Prints all registered currencies and their rates to `os`. */
     void list(std::ostream&) const;
 };

@@ -13,4 +13,5 @@ struct Money {
     std::string currency;
 };
 
+/** Writes "amount CURRENCY" (e.g. "100.00 USD") to `os`. */
 std::ostream& operator<<(std::ostream& os, const Money& m);

@@ -19,6 +19,10 @@ protected:
     double balance;
     const CurrencyRegistry* reg;  // non-owning; outlives the account
 public:
+    /**
+     * Construct an account. `opening` is converted to `currency` if needed.
+     * @throws CurrencyUnknown if `currency` is not registered in `reg`.
+     */
     Account(std::string id, std::string owner, std::string currency,
             Money opening, const CurrencyRegistry* reg);
     virtual ~Account() = default;
@@ -26,7 +30,9 @@ public:
     Account(const Account&) = delete;
     Account& operator=(const Account&) = delete;
 
+    /** @return Human-readable account type label (e.g. "Savings", "Checking"). */
     virtual std::string kind() const = 0;
+    /** @return true if a withdrawal of `amtNative` (in nativeCurrency) is allowed. */
     virtual bool canWithdraw(double amtNative) const = 0;
 
     /**
@@ -50,5 +56,6 @@ public:
     const std::string& getCurrency() const { return nativeCurrency; }
     double getBalance() const { return balance; }
 
+    /** Prints a human-readable account summary line to `os`. */
     virtual void print(std::ostream& os) const;
 };

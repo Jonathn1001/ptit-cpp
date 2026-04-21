@@ -8,6 +8,7 @@
 class Checking : public Account {
     double overdraftLimit;
 public:
+    /** @param overdraftLimit Maximum negative balance permitted (as a positive value). */
     Checking(std::string id, std::string owner, std::string currency,
              Money opening, const CurrencyRegistry* reg, double overdraftLimit);
 

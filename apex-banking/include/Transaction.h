@@ -22,6 +22,7 @@ class Transaction {
     std::string note_;
     std::time_t timestamp_;
 public:
+    /** Constructs a fully-specified, immutable ledger entry. All fields are set once here. */
     Transaction(int id, TxType type, TxStatus status,
                 std::string fromId, std::string toId,
                 Money amount, std::string note, std::time_t timestamp);
