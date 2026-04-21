@@ -32,7 +32,7 @@ those three concepts load-bearing rather than decorative.
 
 ```
 ptit-cpp/
-  apex/
+  apex-banking/
     include/
       Money.h
       Errors.h
@@ -439,7 +439,7 @@ Account& operator+(const Money& m);
 
 | Area | Decision |
 |---|---|
-| Layout | `apex/{include,src}/`, Makefile, C++20 |
+| Layout | `apex-banking/{include,src}/`, Makefile, C++20 |
 | Core classes | `Money`, `CurrencyRegistry`, `Transaction`, `Account`(abstract) + `Savings` / `Checking`, `Bank` |
 | Storage | `std::map<string, unique_ptr<Account>>` in `Bank` |
 | Operators | `Account + Money` = deposit, `Account - Money` = withdraw, both auto-convert |

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build an interactive CLI multi-currency banking system (`apex/` binary) satisfying the PTIT mid-term OOP requirements — inheritance, `+`/`-` operator overloading, `std::map`-based storage, transaction logging, and live demos of the two required error cases.
+**Goal:** Build an interactive CLI multi-currency banking system (`apex-banking/` binary) satisfying the PTIT mid-term OOP requirements — inheritance, `+`/`-` operator overloading, `std::map`-based storage, transaction logging, and live demos of the two required error cases.
 
 **Architecture:** Plain C++20, Make-based build. `Account` abstract base → `Savings`/`Checking`. `Bank` owns a `std::map<string, unique_ptr<Account>>`, a `CurrencyRegistry`, and a `std::vector<Transaction>` ledger. Operators `Account + Money` / `Account - Money` auto-convert currency via the registry.
 
@@ -15,7 +15,7 @@
 ## File Structure
 
 ```
-apex/
+apex-banking/
   include/
     Money.h            # struct Money { amount, currency }; operator<<
     Errors.h           # BankError + derived exception types
@@ -57,21 +57,21 @@ apex/
 ## Task 1: Project skeleton + build pipeline
 
 **Files:**
-- Create: `apex/include/.gitkeep`
-- Create: `apex/src/main.cpp`
-- Create: `apex/Makefile`
+- Create: `apex-banking/include/.gitkeep`
+- Create: `apex-banking/src/main.cpp`
+- Create: `apex-banking/Makefile`
 
 - [ ] **Step 1: Create directory structure**
 
 Run:
 ```bash
-mkdir -p apex/include apex/src apex/test
-touch apex/include/.gitkeep apex/test/.gitkeep
+mkdir -p apex-banking/include apex-banking/src apex-banking/test
+touch apex-banking/include/.gitkeep apex-banking/test/.gitkeep
 ```
 
 - [ ] **Step 2: Create a minimal main.cpp that compiles**
 
-File: `apex/src/main.cpp`
+File: `apex-banking/src/main.cpp`
 ```cpp
 #include <iostream>
 
@@ -83,7 +83,7 @@ int main() {
 
 - [ ] **Step 3: Create the Makefile**
 
-File: `apex/Makefile`
+File: `apex-banking/Makefile`
 ```makefile
 CXX       := g++
 CXXFLAGS  := -std=c++20 -Wall -Wextra -Wpedantic -Iinclude
@@ -118,7 +118,7 @@ clean:
 
 Run:
 ```bash
-cd apex && make
+cd apex-banking && make
 ```
 Expected: produces `./apex` with no warnings.
 
@@ -131,7 +131,7 @@ Expected output: `APEX banking — skeleton build`
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apex/include/.gitkeep apex/src/main.cpp apex/Makefile apex/test/.gitkeep
+git add apex-banking/include/.gitkeep apex-banking/src/main.cpp apex-banking/Makefile apex-banking/test/.gitkeep
 git commit -m "feat(apex): add project skeleton and Makefile"
 ```
 
@@ -140,21 +140,21 @@ git commit -m "feat(apex): add project skeleton and Makefile"
 ## Task 2: Vendor doctest + smoke-test build
 
 **Files:**
-- Create: `apex/test/doctest.h`
-- Create: `apex/test/test_main.cpp`
-- Create: `apex/test/test_smoke.cpp`
+- Create: `apex-banking/test/doctest.h`
+- Create: `apex-banking/test/test_main.cpp`
+- Create: `apex-banking/test/test_smoke.cpp`
 
 - [ ] **Step 1: Fetch doctest single-header**
 
 Run:
 ```bash
-curl -L -o apex/test/doctest.h https://raw.githubusercontent.com/doctest/doctest/v2.4.11/doctest/doctest.h
+curl -L -o apex-banking/test/doctest.h https://raw.githubusercontent.com/doctest/doctest/v2.4.11/doctest/doctest.h
 ```
-Verify: `wc -l apex/test/doctest.h` should print a number > 6000.
+Verify: `wc -l apex-banking/test/doctest.h` should print a number > 6000.
 
 - [ ] **Step 2: Create the test runner entry point**
 
-File: `apex/test/test_main.cpp`
+File: `apex-banking/test/test_main.cpp`
 ```cpp
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
@@ -162,7 +162,7 @@ File: `apex/test/test_main.cpp`
 
 - [ ] **Step 3: Write a smoke test**
 
-File: `apex/test/test_smoke.cpp`
+File: `apex-banking/test/test_smoke.cpp`
 ```cpp
 #include "doctest.h"
 
@@ -175,7 +175,7 @@ TEST_CASE("sanity") {
 
 Run:
 ```bash
-cd apex && make test
+cd apex-banking && make test
 ```
 Expected output contains:
 ```
@@ -185,7 +185,7 @@ Expected output contains:
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apex/test/doctest.h apex/test/test_main.cpp apex/test/test_smoke.cpp
+git add apex-banking/test/doctest.h apex-banking/test/test_main.cpp apex-banking/test/test_smoke.cpp
 git commit -m "test(apex): vendor doctest and add smoke test"
 ```
 
@@ -194,13 +194,13 @@ git commit -m "test(apex): vendor doctest and add smoke test"
 ## Task 3: Money value type + Errors hierarchy
 
 **Files:**
-- Create: `apex/include/Money.h`
-- Create: `apex/include/Errors.h`
-- Create: `apex/src/Money.cpp`
+- Create: `apex-banking/include/Money.h`
+- Create: `apex-banking/include/Errors.h`
+- Create: `apex-banking/src/Money.cpp`
 
 - [ ] **Step 1: Create Money.h**
 
-File: `apex/include/Money.h`
+File: `apex-banking/include/Money.h`
 ```cpp
 #pragma once
 #include <iosfwd>
@@ -222,7 +222,7 @@ std::ostream& operator<<(std::ostream& os, const Money& m);
 
 - [ ] **Step 2: Create Money.cpp**
 
-File: `apex/src/Money.cpp`
+File: `apex-banking/src/Money.cpp`
 ```cpp
 #include "Money.h"
 #include <iomanip>
@@ -238,7 +238,7 @@ std::ostream& operator<<(std::ostream& os, const Money& m) {
 
 - [ ] **Step 3: Create Errors.h**
 
-File: `apex/include/Errors.h`
+File: `apex-banking/include/Errors.h`
 ```cpp
 #pragma once
 #include <stdexcept>
@@ -264,14 +264,14 @@ struct BadInput            : BankError { using BankError::BankError; };
 
 Run:
 ```bash
-cd apex && make clean && make
+cd apex-banking && make clean && make
 ```
 Expected: clean build, no warnings.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apex/include/Money.h apex/include/Errors.h apex/src/Money.cpp
+git add apex-banking/include/Money.h apex-banking/include/Errors.h apex-banking/src/Money.cpp
 git commit -m "feat(apex): add Money value type and BankError hierarchy"
 ```
 
@@ -280,13 +280,13 @@ git commit -m "feat(apex): add Money value type and BankError hierarchy"
 ## Task 4: CurrencyRegistry (TDD)
 
 **Files:**
-- Create: `apex/test/test_currency.cpp`
-- Create: `apex/include/Currency.h`
-- Create: `apex/src/Currency.cpp`
+- Create: `apex-banking/test/test_currency.cpp`
+- Create: `apex-banking/include/Currency.h`
+- Create: `apex-banking/src/Currency.cpp`
 
 - [ ] **Step 1: Write failing tests**
 
-File: `apex/test/test_currency.cpp`
+File: `apex-banking/test/test_currency.cpp`
 ```cpp
 #include "doctest.h"
 #include "Currency.h"
@@ -350,12 +350,12 @@ TEST_CASE("convert: unknown source or target throws CurrencyUnknown") {
 
 - [ ] **Step 2: Run tests — expect compile failure**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: compile error — `Currency.h` does not exist.
 
 - [ ] **Step 3: Create Currency.h**
 
-File: `apex/include/Currency.h`
+File: `apex-banking/include/Currency.h`
 ```cpp
 #pragma once
 #include "Money.h"
@@ -391,7 +391,7 @@ public:
 
 - [ ] **Step 4: Implement Currency.cpp**
 
-File: `apex/src/Currency.cpp`
+File: `apex-banking/src/Currency.cpp`
 ```cpp
 #include "Currency.h"
 #include "Errors.h"
@@ -433,7 +433,7 @@ void CurrencyRegistry::list(std::ostream& os) const {
 
 - [ ] **Step 5: Run tests — expect all pass**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected output contains:
 ```
 [doctest] test cases: 8 | 8 passed | 0 failed
@@ -442,7 +442,7 @@ Expected output contains:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apex/include/Currency.h apex/src/Currency.cpp apex/test/test_currency.cpp
+git add apex-banking/include/Currency.h apex-banking/src/Currency.cpp apex-banking/test/test_currency.cpp
 git commit -m "feat(apex): add CurrencyRegistry with rate validation and conversion"
 ```
 
@@ -451,14 +451,14 @@ git commit -m "feat(apex): add CurrencyRegistry with rate validation and convers
 ## Task 5: Transaction class
 
 **Files:**
-- Create: `apex/include/Transaction.h`
-- Create: `apex/src/Transaction.cpp`
+- Create: `apex-banking/include/Transaction.h`
+- Create: `apex-banking/src/Transaction.cpp`
 
 Transaction is a pure data carrier with a `print` method — its behavior is covered via the Bank ledger tests in Task 9, so we skip dedicated unit tests here.
 
 - [ ] **Step 1: Create Transaction.h**
 
-File: `apex/include/Transaction.h`
+File: `apex-banking/include/Transaction.h`
 ```cpp
 #pragma once
 #include "Money.h"
@@ -504,7 +504,7 @@ public:
 
 - [ ] **Step 2: Create Transaction.cpp**
 
-File: `apex/src/Transaction.cpp`
+File: `apex-banking/src/Transaction.cpp`
 ```cpp
 #include "Transaction.h"
 #include <iomanip>
@@ -561,13 +561,13 @@ void Transaction::print(std::ostream& os) const {
 
 - [ ] **Step 3: Verify build**
 
-Run: `cd apex && make clean && make && make test`
+Run: `cd apex-banking && make clean && make && make test`
 Expected: all targets succeed, 8 tests still pass.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add apex/include/Transaction.h apex/src/Transaction.cpp
+git add apex-banking/include/Transaction.h apex-banking/src/Transaction.cpp
 git commit -m "feat(apex): add Transaction ledger entry type"
 ```
 
@@ -576,15 +576,15 @@ git commit -m "feat(apex): add Transaction ledger entry type"
 ## Task 6: Account abstract base + operator overloads (TDD)
 
 **Files:**
-- Create: `apex/include/Account.h`
-- Create: `apex/src/Account.cpp`
-- Create: `apex/test/test_account.cpp`
+- Create: `apex-banking/include/Account.h`
+- Create: `apex-banking/src/Account.cpp`
+- Create: `apex-banking/test/test_account.cpp`
 
 Account is abstract, so its operators are tested through a tiny test-only derived class defined inside the test file.
 
 - [ ] **Step 1: Write failing tests**
 
-File: `apex/test/test_account.cpp`
+File: `apex-banking/test/test_account.cpp`
 ```cpp
 #include "doctest.h"
 #include "Account.h"
@@ -662,12 +662,12 @@ TEST_CASE("operator+ propagates CurrencyUnknown from registry") {
 
 - [ ] **Step 2: Run tests — expect compile failure (Account.h missing)**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: compile error — `Account.h: No such file or directory`.
 
 - [ ] **Step 3: Create Account.h**
 
-File: `apex/include/Account.h`
+File: `apex-banking/include/Account.h`
 ```cpp
 #pragma once
 #include "Money.h"
@@ -727,7 +727,7 @@ public:
 
 - [ ] **Step 4: Implement Account.cpp**
 
-File: `apex/src/Account.cpp`
+File: `apex-banking/src/Account.cpp`
 ```cpp
 #include "Account.h"
 #include "Currency.h"
@@ -784,13 +784,13 @@ void Account::print(std::ostream& os) const {
 
 - [ ] **Step 5: Run tests — expect all pass**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: test count grows to 14 passing (8 currency + 6 account), 0 failed.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apex/include/Account.h apex/src/Account.cpp apex/test/test_account.cpp
+git add apex-banking/include/Account.h apex-banking/src/Account.cpp apex-banking/test/test_account.cpp
 git commit -m "feat(apex): add Account base class with + and - operator overloads"
 ```
 
@@ -799,13 +799,13 @@ git commit -m "feat(apex): add Account base class with + and - operator overload
 ## Task 7: Savings class (TDD)
 
 **Files:**
-- Create: `apex/test/test_savings.cpp`
-- Create: `apex/include/Savings.h`
-- Create: `apex/src/Savings.cpp`
+- Create: `apex-banking/test/test_savings.cpp`
+- Create: `apex-banking/include/Savings.h`
+- Create: `apex-banking/src/Savings.cpp`
 
 - [ ] **Step 1: Write failing tests**
 
-File: `apex/test/test_savings.cpp`
+File: `apex-banking/test/test_savings.cpp`
 ```cpp
 #include "doctest.h"
 #include "Savings.h"
@@ -847,12 +847,12 @@ TEST_CASE("Savings applyInterest multiplies balance by (1 + rate)") {
 
 - [ ] **Step 2: Run tests — expect compile failure**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `Savings.h: No such file or directory`.
 
 - [ ] **Step 3: Create Savings.h**
 
-File: `apex/include/Savings.h`
+File: `apex-banking/include/Savings.h`
 ```cpp
 #pragma once
 #include "Account.h"
@@ -879,7 +879,7 @@ public:
 
 - [ ] **Step 4: Implement Savings.cpp**
 
-File: `apex/src/Savings.cpp`
+File: `apex-banking/src/Savings.cpp`
 ```cpp
 #include "Savings.h"
 #include <ostream>
@@ -907,13 +907,13 @@ void Savings::print(std::ostream& os) const {
 
 - [ ] **Step 5: Run tests — expect 17 passing**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `17 passed | 0 failed`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apex/include/Savings.h apex/src/Savings.cpp apex/test/test_savings.cpp
+git add apex-banking/include/Savings.h apex-banking/src/Savings.cpp apex-banking/test/test_savings.cpp
 git commit -m "feat(apex): add Savings account with interest and no-overdraft policy"
 ```
 
@@ -922,13 +922,13 @@ git commit -m "feat(apex): add Savings account with interest and no-overdraft po
 ## Task 8: Checking class (TDD)
 
 **Files:**
-- Create: `apex/test/test_checking.cpp`
-- Create: `apex/include/Checking.h`
-- Create: `apex/src/Checking.cpp`
+- Create: `apex-banking/test/test_checking.cpp`
+- Create: `apex-banking/include/Checking.h`
+- Create: `apex-banking/src/Checking.cpp`
 
 - [ ] **Step 1: Write failing tests**
 
-File: `apex/test/test_checking.cpp`
+File: `apex-banking/test/test_checking.cpp`
 ```cpp
 #include "doctest.h"
 #include "Checking.h"
@@ -969,12 +969,12 @@ TEST_CASE("Checking rejects withdrawal beyond overdraft") {
 
 - [ ] **Step 2: Run tests — expect compile failure**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `Checking.h: No such file or directory`.
 
 - [ ] **Step 3: Create Checking.h**
 
-File: `apex/include/Checking.h`
+File: `apex-banking/include/Checking.h`
 ```cpp
 #pragma once
 #include "Account.h"
@@ -999,7 +999,7 @@ public:
 
 - [ ] **Step 4: Implement Checking.cpp**
 
-File: `apex/src/Checking.cpp`
+File: `apex-banking/src/Checking.cpp`
 ```cpp
 #include "Checking.h"
 #include <ostream>
@@ -1023,13 +1023,13 @@ void Checking::print(std::ostream& os) const {
 
 - [ ] **Step 5: Run tests — expect 20 passing**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `20 passed | 0 failed`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apex/include/Checking.h apex/src/Checking.cpp apex/test/test_checking.cpp
+git add apex-banking/include/Checking.h apex-banking/src/Checking.cpp apex-banking/test/test_checking.cpp
 git commit -m "feat(apex): add Checking account with overdraft limit"
 ```
 
@@ -1038,13 +1038,13 @@ git commit -m "feat(apex): add Checking account with overdraft limit"
 ## Task 9: Bank — account lifecycle + money movement (TDD)
 
 **Files:**
-- Create: `apex/test/test_bank.cpp`
-- Create: `apex/include/Bank.h`
-- Create: `apex/src/Bank.cpp`
+- Create: `apex-banking/test/test_bank.cpp`
+- Create: `apex-banking/include/Bank.h`
+- Create: `apex-banking/src/Bank.cpp`
 
 - [ ] **Step 1: Write failing tests for lifecycle + movement**
 
-File: `apex/test/test_bank.cpp`
+File: `apex-banking/test/test_bank.cpp`
 ```cpp
 #include "doctest.h"
 #include "Bank.h"
@@ -1149,12 +1149,12 @@ TEST_CASE("lock / unlock pair and DoubleSpendDetected on second lock") {
 
 - [ ] **Step 2: Run tests — expect compile failure**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `Bank.h: No such file or directory`.
 
 - [ ] **Step 3: Create Bank.h**
 
-File: `apex/include/Bank.h`
+File: `apex-banking/include/Bank.h`
 ```cpp
 #pragma once
 #include "Account.h"
@@ -1226,7 +1226,7 @@ public:
 
 - [ ] **Step 4: Implement Bank.cpp (lifecycle, movement, currency, locking)**
 
-File: `apex/src/Bank.cpp`
+File: `apex-banking/src/Bank.cpp`
 ```cpp
 #include "Bank.h"
 #include "Checking.h"
@@ -1374,13 +1374,13 @@ void Bank::simulateDoubleSpend(const std::string& /*accountId*/, double /*amount
 
 - [ ] **Step 5: Run tests — expect 29 passing**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `29 passed | 0 failed`.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apex/include/Bank.h apex/src/Bank.cpp apex/test/test_bank.cpp
+git add apex-banking/include/Bank.h apex-banking/src/Bank.cpp apex-banking/test/test_bank.cpp
 git commit -m "feat(apex): add Bank facade with lifecycle, ledger, transfer, and locking"
 ```
 
@@ -1389,12 +1389,12 @@ git commit -m "feat(apex): add Bank facade with lifecycle, ledger, transfer, and
 ## Task 10: Double-spend simulation
 
 **Files:**
-- Modify: `apex/src/Bank.cpp` (replace stub `simulateDoubleSpend`)
-- Modify: `apex/test/test_bank.cpp` (add test)
+- Modify: `apex-banking/src/Bank.cpp` (replace stub `simulateDoubleSpend`)
+- Modify: `apex-banking/test/test_bank.cpp` (add test)
 
 - [ ] **Step 1: Add test for the buggy-phase observable effect**
 
-Append to `apex/test/test_bank.cpp`:
+Append to `apex-banking/test/test_bank.cpp`:
 ```cpp
 TEST_CASE("simulateDoubleSpend leaves the buggy-phase account state wrong") {
     Bank b = makeSeededBank();
@@ -1420,12 +1420,12 @@ TEST_CASE("simulateDoubleSpend leaves the buggy-phase account state wrong") {
 
 - [ ] **Step 2: Run test — expect failure (stub is empty)**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: the new test fails — `sawDoubleSpendDetected` is false.
 
 - [ ] **Step 3: Replace the `simulateDoubleSpend` stub in Bank.cpp**
 
-In `apex/src/Bank.cpp`, replace the stub with:
+In `apex-banking/src/Bank.cpp`, replace the stub with:
 
 ```cpp
 void Bank::simulateDoubleSpend(const std::string& accountId, double amount) {
@@ -1526,17 +1526,17 @@ void Bank::simulateDoubleSpend(const std::string& accountId, double amount) {
 }
 ```
 
-Add `#include <iostream>` near the top of `apex/src/Bank.cpp` if not already present.
+Add `#include <iostream>` near the top of `apex-banking/src/Bank.cpp` if not already present.
 
 - [ ] **Step 4: Run tests — expect all 30 passing**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `30 passed | 0 failed`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apex/src/Bank.cpp apex/test/test_bank.cpp
+git add apex-banking/src/Bank.cpp apex-banking/test/test_bank.cpp
 git commit -m "feat(apex): implement two-phase double-spend simulation"
 ```
 
@@ -1545,13 +1545,13 @@ git commit -m "feat(apex): implement two-phase double-spend simulation"
 ## Task 11: CLI menu (hand-tested)
 
 **Files:**
-- Modify: `apex/src/main.cpp` (replace skeleton)
+- Modify: `apex-banking/src/main.cpp` (replace skeleton)
 
 This is the interactive menu from the spec. No unit tests — verified by running the binary and walking through each option.
 
 - [ ] **Step 1: Replace main.cpp with full CLI**
 
-File: `apex/src/main.cpp`
+File: `apex-banking/src/main.cpp`
 ```cpp
 #include "Bank.h"
 #include "Errors.h"
@@ -1758,7 +1758,7 @@ int main() {
 
 Run:
 ```bash
-cd apex && make
+cd apex-banking && make
 ./apex
 ```
 
@@ -1775,13 +1775,13 @@ Walkthrough checklist — manually verify each works:
 
 - [ ] **Step 3: Run tests one last time**
 
-Run: `cd apex && make test`
+Run: `cd apex-banking && make test`
 Expected: `30 passed | 0 failed`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add apex/src/main.cpp
+git add apex-banking/src/main.cpp
 git commit -m "feat(apex): add interactive Vietnamese CLI menu"
 ```
 
@@ -1790,11 +1790,11 @@ git commit -m "feat(apex): add interactive Vietnamese CLI menu"
 ## Task 12: README (Vietnamese, GitHub-ready)
 
 **Files:**
-- Create: `apex/README.md`
+- Create: `apex-banking/README.md`
 
 - [ ] **Step 1: Write the README**
 
-File: `apex/README.md`
+File: `apex-banking/README.md`
 ````markdown
 # APEX — Hệ thống ngân hàng đa tiền tệ
 
@@ -1904,7 +1904,7 @@ Thử đặt tỷ giá JPY = 0     →  ❌ InvalidRate: rate must be > 0
 ## 📂 Cấu trúc thư mục
 
 ```
-apex/
+apex-banking/
 ├── include/       # Header files (.h)
 ├── src/           # Implementation (.cpp)
 ├── test/          # Unit tests (doctest)
@@ -1931,21 +1931,21 @@ PTIT — 2026.
 
 Run:
 ```bash
-cd apex && ls README.md && head -20 README.md
+cd apex-banking && ls README.md && head -20 README.md
 ```
 
 - [ ] **Step 3: Final build + test sanity**
 
 Run:
 ```bash
-cd apex && make clean && make && make test
+cd apex-banking && make clean && make && make test
 ```
 Expected: clean build, `30 passed | 0 failed`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add apex/README.md
+git add apex-banking/README.md
 git commit -m "docs(apex): add Vietnamese README with install/demo guide"
 ```
 
@@ -1954,11 +1954,11 @@ git commit -m "docs(apex): add Vietnamese README with install/demo guide"
 ## Task 13: Final polish + tag
 
 **Files:**
-- Modify: `apex/src/*.cpp` (sweep for missing docblocks)
+- Modify: `apex-banking/src/*.cpp` (sweep for missing docblocks)
 
 - [ ] **Step 1: Sweep all public methods for docblocks**
 
-Open each header in `apex/include/` and verify every public method has a
+Open each header in `apex-banking/include/` and verify every public method has a
 `/** ... */` docblock per the spec's documentation standard (English, brief,
 covers purpose / params / throws / return where relevant). Fix any gaps.
 
@@ -1966,7 +1966,7 @@ covers purpose / params / throws / return where relevant). Fix any gaps.
 
 Run:
 ```bash
-cd apex && make clean && make && make test
+cd apex-banking && make clean && make && make test
 ```
 Expected: clean build, all tests pass.
 
@@ -1981,7 +1981,7 @@ Quickly verify: menu appears, seed data loads, option 12 & 13 work, 0 exits clea
 - [ ] **Step 4: Commit any doc fixes and tag**
 
 ```bash
-git add -u apex/include/
+git add -u apex-banking/include/
 git diff --cached --quiet || git commit -m "docs(apex): fill in missing public-method docblocks"
 ```
 
