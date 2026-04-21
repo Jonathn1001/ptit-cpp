@@ -46,7 +46,7 @@ public:
     Account* find(const std::string& id);
     /**
      * Like find(), but throws on missing account.
-     * @throws BadInput if `id` does not exist.
+     * @throws AccountNotFound if `id` does not exist.
      */
     Account& require(const std::string& id);
 

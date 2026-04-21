@@ -38,7 +38,7 @@ public:
     /**
      * Deposit. Auto-converts `m` to this account's nativeCurrency.
      * @throws BadInput if m.amount < 0.
-     * @throws CurrencyUnknown / InvalidRate via the registry.
+     * @throws CurrencyUnknown via the registry.
      * @return *this (chaining).
      */
     Account& operator+(const Money& m);
@@ -47,7 +47,7 @@ public:
      * Withdraw. Auto-converts then consults `canWithdraw`.
      * @throws BadInput if m.amount < 0.
      * @throws InsufficientFunds if policy rejects the converted amount.
-     * @throws CurrencyUnknown / InvalidRate via the registry.
+     * @throws CurrencyUnknown via the registry.
      */
     Account& operator-(const Money& m);
 
