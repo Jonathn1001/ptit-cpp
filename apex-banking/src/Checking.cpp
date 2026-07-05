@@ -1,6 +1,7 @@
 #include "Checking.h"
 #include <ostream>
 #include <utility>
+#include <iomanip>
 
 Checking::Checking(std::string id, std::string owner, std::string currency,
                    Money opening, const CurrencyRegistry* reg, double overdraftLimit)
@@ -14,5 +15,5 @@ bool Checking::canWithdraw(double amtNative) const {
 
 void Checking::print(std::ostream& os) const {
     Account::print(os);
-    os << "  overdraft=" << overdraftLimit;
+    os << "  overdraft="<< std::fixed << std::setprecision(0) << overdraftLimit;
 }
