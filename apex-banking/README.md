@@ -126,4 +126,4 @@ make test
 
 ## 👤 Tác giả
 
-PTIT — 2026.
+PTIT — 2026..
