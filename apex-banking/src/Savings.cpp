@@ -1,4 +1,5 @@
 #include "Savings.h"
+#include "Errors.h"
 #include <ostream>
 #include <utility>
 
@@ -6,7 +7,9 @@ Savings::Savings(std::string id, std::string owner, std::string currency,
                  Money opening, const CurrencyRegistry* reg, double interestRate)
     : Account(std::move(id), std::move(owner), std::move(currency),
               std::move(opening), reg),
-      interestRate(interestRate) {}
+      interestRate(interestRate) {
+    if (interestRate < 0.0) throw BadInput("interest rate must be >= 0");
+}
 
 bool Savings::canWithdraw(double amtNative) const {
     return amtNative <= balance;

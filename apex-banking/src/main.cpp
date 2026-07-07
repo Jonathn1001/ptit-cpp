@@ -27,6 +27,8 @@ double readDouble(const std::string& prompt) {
     std::istringstream is(s);
     double v;
     if (!(is >> v)) throw BadInput("cần nhập một số, nhưng nhận được: " + s);
+    std::string rest;
+    if (is >> rest) throw BadInput("ký tự thừa sau số: " + s);
     return v;
 }
 

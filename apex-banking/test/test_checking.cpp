@@ -35,3 +35,9 @@ TEST_CASE("Checking rejects withdrawal beyond overdraft") {
     CHECK_THROWS_AS(c - huge, InsufficientFunds);
     CHECK(c.getBalance() == doctest::Approx(100.0));
 }
+
+TEST_CASE("Checking rejects a negative overdraft limit") {
+    auto reg = usdOnly();
+    CHECK_THROWS_AS(Checking("c1", "B", "USD", Money{100.0, "USD"}, &reg, -50.0),
+                    BadInput);
+}

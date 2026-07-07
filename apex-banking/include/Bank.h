@@ -58,6 +58,14 @@ public:
     /** Transfers `m` from `fromId` to `toId`, recording a TRANSFER transaction. */
     void transfer(const std::string& fromId, const std::string& toId, const Money& m);
 
+    /**
+     * Applies one interest period to Savings account `id`; records an
+     * APPLY_INTEREST transaction (SUCCESS or FAILED).
+     * @throws BadInput if `id` is not a Savings account.
+     * @throws AccountNotFound if `id` does not exist.
+     */
+    void applyInterest(const std::string& id);
+
     // --- currency admin ---
     /** Registers or updates a currency rate; records a SET_RATE transaction. */
     void setRate(const std::string& code, double rate);
