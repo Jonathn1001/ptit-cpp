@@ -1,7 +1,5 @@
 #include "BankService.h"
 
-#include "Account.h"
-#include "Savings.h"
 #include "Transaction.h"
 
 #include <iostream>
@@ -84,14 +82,10 @@ void BankService::updateRate(const User& actor, const std::string& currency, dou
 void BankService::applyInterest(const User& actor, const std::string& accountId) {
     requireAdmin(actor);
     std::lock_guard<std::mutex> guard(bankMutex_);
-
-    Account& account = bank_.require(accountId);
-    Savings* savings = dynamic_cast<Savings*>(&account);
-    if (!savings) {
-        throw BadInput(accountId + " không phải Savings");
-    }
-
-    savings->applyInterest();
+    // Route through Bank so the interest run is recorded as an APPLY_INTEREST
+    // ledger entry (SUCCESS/FAILED). Bank::applyInterest performs the same
+    // Savings type-check and throws BadInput for a non-Savings account.
+    bank_.applyInterest(accountId);
 }
 
 void BankService::printAccount(const User& actor, const std::string& accountId, std::ostream& os) const {

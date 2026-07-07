@@ -34,6 +34,14 @@ TEST_CASE("find returns nullptr for missing id, require throws") {
     CHECK_THROWS_AS(b.require("nope"), AccountNotFound);
 }
 
+TEST_CASE("createSavings in an unregistered native currency throws CurrencyUnknown") {
+    Bank b = makeSeededBank();  // only USD + VND registered
+    CHECK_THROWS_AS(b.createSavings("A", "ZZZ", Money{100.0, "ZZZ"}, 0.05),
+                    CurrencyUnknown);
+    CHECK_THROWS_AS(b.createChecking("B", "ZZZ", Money{100.0, "ZZZ"}, 0.0),
+                    CurrencyUnknown);
+}
+
 TEST_CASE("deposit updates balance and logs a SUCCESS tx") {
     Bank b = makeSeededBank();
     Account& a = b.createSavings("A", "USD", Money{100.0, "USD"}, 0.0);
@@ -82,6 +90,25 @@ TEST_CASE("transfer fails atomically when source has insufficient funds") {
     CHECK(to.getBalance()   == doctest::Approx(0.0));
     auto log = b.ledgerEntries();
     CHECK(log.back().type() == TxType::TRANSFER);
+    CHECK(log.back().status() == TxStatus::FAILED);
+}
+
+TEST_CASE("applyInterest updates a Savings balance and logs APPLY_INTEREST") {
+    Bank b = makeSeededBank();
+    Account& a = b.createSavings("A", "USD", Money{100.0, "USD"}, 0.05);
+    b.applyInterest(a.getId());
+    CHECK(a.getBalance() == doctest::Approx(105.0));
+    auto log = b.ledgerEntries();
+    CHECK(log.back().type() == TxType::APPLY_INTEREST);
+    CHECK(log.back().status() == TxStatus::SUCCESS);
+}
+
+TEST_CASE("applyInterest on a non-Savings account throws and logs FAILED") {
+    Bank b = makeSeededBank();
+    Account& c = b.createChecking("B", "USD", Money{100.0, "USD"}, 50.0);
+    CHECK_THROWS_AS(b.applyInterest(c.getId()), BadInput);
+    auto log = b.ledgerEntries();
+    CHECK(log.back().type() == TxType::APPLY_INTEREST);
     CHECK(log.back().status() == TxStatus::FAILED);
 }
 

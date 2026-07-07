@@ -88,12 +88,34 @@ void Bank::transfer(const std::string& fromId, const std::string& toId, const Mo
         Account& from = require(fromId);
         Account& to   = require(toId);
         from - m;
-        to   + m;
+        try {
+            to + m;
+        } catch (...) {
+            // Credit failed after the debit succeeded — undo the debit so no
+            // money vanishes. `from + m` reverses the exact converted amount.
+            from + m;
+            throw;
+        }
         log(Transaction(allocTxId(), TxType::TRANSFER, TxStatus::SUCCESS,
                         fromId, toId, m, "", now()));
     } catch (const BankError& e) {
         log(Transaction(allocTxId(), TxType::TRANSFER, TxStatus::FAILED,
                         fromId, toId, m, e.what(), now()));
+        throw;
+    }
+}
+
+void Bank::applyInterest(const std::string& id) {
+    try {
+        Account& a = require(id);
+        Savings* s = dynamic_cast<Savings*>(&a);
+        if (!s) throw BadInput(id + " is not a Savings account");
+        s->applyInterest();
+        log(Transaction(allocTxId(), TxType::APPLY_INTEREST, TxStatus::SUCCESS,
+                        "", id, Money{s->getBalance(), s->getCurrency()}, "", now()));
+    } catch (const BankError& e) {
+        log(Transaction(allocTxId(), TxType::APPLY_INTEREST, TxStatus::FAILED,
+                        "", id, Money{}, e.what(), now()));
         throw;
     }
 }

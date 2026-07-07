@@ -16,6 +16,11 @@ Account::Account(std::string id, std::string owner, std::string currency,
     if (opening.amount < 0.0) {
         throw BadInput("opening balance must be >= 0");
     }
+    // The account's native currency must exist even when the opening balance
+    // is already in it — otherwise every later FX op would throw on a broken account.
+    if (!reg->has(nativeCurrency)) {
+        throw CurrencyUnknown("unknown currency: " + nativeCurrency);
+    }
     if (opening.currency == nativeCurrency) {
         balance = opening.amount;
     } else {

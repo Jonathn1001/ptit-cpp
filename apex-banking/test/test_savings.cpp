@@ -35,3 +35,9 @@ TEST_CASE("Savings applyInterest multiplies balance by (1 + rate)") {
     s.applyInterest();
     CHECK(s.getBalance() == doctest::Approx(110.25));
 }
+
+TEST_CASE("Savings rejects a negative interest rate") {
+    auto reg = usdOnly();
+    CHECK_THROWS_AS(Savings("s1", "A", "USD", Money{100.0, "USD"}, &reg, -0.01),
+                    BadInput);
+}
