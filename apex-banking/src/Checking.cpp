@@ -15,7 +15,8 @@ Checking::Checking(std::string id, std::string owner, std::string currency,
     }
 }
 bool Checking::canWithdraw(double amtNative) const {
-    return amtNative <= balance + overdraftLimit;
+    const double available = balance + overdraftLimit;
+    return std::isfinite(amtNative) && std::isfinite(available) && amtNative <= available;
 }
 
 void Checking::print(std::ostream& os) const {

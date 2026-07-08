@@ -44,7 +44,12 @@ Account& Account::operator+(const Money& m) {
         ? m
         : reg->convert(m, nativeCurrency);
 
-    balance += converted.amount;
+    const double nextBalance = balance + converted.amount;
+    if (!std::isfinite(nextBalance)) {
+        throw BadInput("balance must remain finite");
+    }
+
+    balance = nextBalance;
     return *this;
 }
 
@@ -65,7 +70,12 @@ Account& Account::operator-(const Money& m) {
         throw InsufficientFunds("insufficient funds in " + id);
     }
 
-    balance -= converted.amount;
+    const double nextBalance = balance - converted.amount;
+    if (!std::isfinite(nextBalance)) {
+        throw BadInput("balance must remain finite");
+    }
+
+    balance = nextBalance;
     return *this;
 }
 

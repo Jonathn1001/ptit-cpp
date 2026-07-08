@@ -3,6 +3,8 @@
 #include "Currency.h"
 #include "Errors.h"
 
+#include <limits>
+
 namespace {
 /** Test-only concrete Account that always permits any withdrawal. */
 class PermissiveAccount : public Account {
@@ -72,4 +74,13 @@ TEST_CASE("operator+ propagates CurrencyUnknown from registry") {
     PermissiveAccount a("acc_1", "A", "USD", Money{100.0, "USD"}, &reg);
     Money unknown{1.0, "ZZZ"};
     CHECK_THROWS_AS(a + unknown, CurrencyUnknown);
+}
+
+TEST_CASE("operator+ rejects deposits that would make balance non-finite") {
+    auto reg = makeRegistry();
+    const double max = std::numeric_limits<double>::max();
+    PermissiveAccount a("acc_1", "A", "USD", Money{max, "USD"}, &reg);
+    Money deposit{max, "USD"};
+    CHECK_THROWS_AS(a + deposit, BadInput);
+    CHECK(a.getBalance() == max);
 }
