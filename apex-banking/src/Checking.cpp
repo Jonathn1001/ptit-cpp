@@ -3,15 +3,17 @@
 #include <iomanip>
 #include <ostream>
 #include <utility>
+#include <cmath>
 
 Checking::Checking(std::string id, std::string owner, std::string currency,
                    Money opening, const CurrencyRegistry* reg, double overdraftLimit)
     : Account(std::move(id), std::move(owner), std::move(currency),
               std::move(opening), reg),
       overdraftLimit(overdraftLimit) {
-    if (overdraftLimit < 0.0) throw BadInput("overdraft limit must be >= 0");
+    if (!std::isfinite(overdraftLimit) || overdraftLimit < 0.0) {
+        throw BadInput("overdraft limit must be finite and >= 0");
+    }
 }
-
 bool Checking::canWithdraw(double amtNative) const {
     return amtNative <= balance + overdraftLimit;
 }

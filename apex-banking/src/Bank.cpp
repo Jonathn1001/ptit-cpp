@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <utility>
@@ -57,6 +58,46 @@ Account& Bank::require(const std::string& id) {
 }
 
 // ----- movement -----
+void Bank::applyInterest(const std::string& id) {
+    try {
+        Account& a = require(id);
+        Savings* s = dynamic_cast<Savings*>(&a);
+
+        if (!s) {
+            throw BadInput(id + " is not a Savings account");
+        }
+
+        double before = s->getBalance();
+
+        s->applyInterest();
+
+        double interestGenerated = s->getBalance() - before;
+
+        log(Transaction(
+            allocTxId(),
+            TxType::APPLY_INTEREST,
+            TxStatus::SUCCESS,
+            "",
+            id,
+            Money{interestGenerated, s->getCurrency()},
+            "interest generated",
+            now()
+        ));
+    } catch (const BankError& e) {
+        log(Transaction(
+            allocTxId(),
+            TxType::APPLY_INTEREST,
+            TxStatus::FAILED,
+            "",
+            id,
+            Money{},
+            e.what(),
+            now()
+        ));
+
+        throw;
+    }
+}
 void Bank::deposit(const std::string& id, const Money& m) {
     try {
         Account& a = require(id);
@@ -71,54 +112,59 @@ void Bank::deposit(const std::string& id, const Money& m) {
 }
 
 void Bank::withdraw(const std::string& id, const Money& m) {
+    std::lock_guard<std::mutex> guard(bankMutex);
+
     try {
-        Account& a = require(id);
+        Account* p = find(id);
+        if (!p) {
+            throw AccountNotFound("no such account: " + id);
+        }
+
+        Account& a = *p;
         a - m;
-        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::SUCCESS,
-                        id, "", m, "", now()));
+
+        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::SUCCESS, id, "", m, "", now()));
     } catch (const BankError& e) {
-        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED,
-                        id, "", m, e.what(), now()));
+        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED, id, "", m, e.what(), now()));
         throw;
     }
 }
 
 void Bank::transfer(const std::string& fromId, const std::string& toId, const Money& m) {
+    std::lock_guard<std::mutex> guard(bankMutex);
+
     try {
-        Account& from = require(fromId);
-        Account& to   = require(toId);
+        Account* fromPtr = find(fromId);
+        Account* toPtr = find(toId);
+
+        if (!fromPtr) {
+            throw AccountNotFound("no such account: " + fromId);
+        }
+
+        if (!toPtr) {
+            throw AccountNotFound("no such account: " + toId);
+        }
+
+        Account& from = *fromPtr;
+        Account& to = *toPtr;
+
         from - m;
+
         try {
             to + m;
         } catch (...) {
-            // Credit failed after the debit succeeded — undo the debit so no
-            // money vanishes. `from + m` reverses the exact converted amount.
             from + m;
             throw;
         }
-        log(Transaction(allocTxId(), TxType::TRANSFER, TxStatus::SUCCESS,
-                        fromId, toId, m, "", now()));
+
+        log(Transaction(allocTxId(), TxType::TRANSFER, TxStatus::SUCCESS, fromId, toId, m, "", now()));
     } catch (const BankError& e) {
-        log(Transaction(allocTxId(), TxType::TRANSFER, TxStatus::FAILED,
-                        fromId, toId, m, e.what(), now()));
+        log(Transaction(allocTxId(), TxType::TRANSFER, TxStatus::FAILED, fromId, toId, m, e.what(), now()));
         throw;
     }
 }
 
-void Bank::applyInterest(const std::string& id) {
-    try {
-        Account& a = require(id);
-        Savings* s = dynamic_cast<Savings*>(&a);
-        if (!s) throw BadInput(id + " is not a Savings account");
-        s->applyInterest();
-        log(Transaction(allocTxId(), TxType::APPLY_INTEREST, TxStatus::SUCCESS,
-                        "", id, Money{s->getBalance(), s->getCurrency()}, "", now()));
-    } catch (const BankError& e) {
-        log(Transaction(allocTxId(), TxType::APPLY_INTEREST, TxStatus::FAILED,
-                        "", id, Money{}, e.what(), now()));
-        throw;
-    }
-}
+
 
 // ----- currency -----
 void Bank::setRate(const std::string& code, double rate) {

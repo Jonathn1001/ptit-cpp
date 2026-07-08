@@ -2,128 +2,205 @@
 
 > Đồ án giữa kỳ C++ (PTIT) — Đề 2: Multi-currency banking system.
 
-Chương trình CLI tương tác mô phỏng một hệ thống ngân hàng chuyên nghiệp
-quản lý nhiều loại tài khoản (Savings, Checking), hỗ trợ chuyển khoản
-giữa các loại tiền tệ khác nhau, ghi sổ cái mọi giao dịch, và trình diễn
-trực tiếp các tình huống lỗi theo yêu cầu đề bài.
+Chương trình CLI tương tác mô phỏng một hệ thống ngân hàng đa tiền tệ, quản lý nhiều loại account như `Savings` và `Checking`, hỗ trợ nạp tiền, rút tiền, chuyển khoản, quy đổi currency, ghi ledger và minh họa tình huống double-spend.
 
-## ✨ Tính năng
+Bản này đã được chỉnh để logic chặt hơn nhưng vẫn giữ tối đa bố cục gốc: `include/`, `src/`, `test/`, `Makefile`, `README.md`.
 
-- Kế thừa: lớp `Account` trừu tượng → `Savings` (có lãi suất, không thấu chi)
-  và `Checking` (không lãi suất, có hạn mức thấu chi).
-- Nạp chồng toán tử `+` và `-` trên `Account` để nạp / rút tiền, **tự động
-  quy đổi tiền tệ** qua `CurrencyRegistry`.
-- `Bank` lưu trữ tài khoản trong `std::map<std::string, std::unique_ptr<Account>>`.
-- Lớp `Transaction` ghi lại mọi giao dịch (kể cả thất bại) trong sổ cái.
-- Demo tương tác hai tình huống lỗi theo yêu cầu:
-  - Chi tiêu kép (Double-Spend) — minh hoạ cả phiên bản có lỗi và đã sửa.
-  - Tỷ giá không hợp lệ — từ chối rate ≤ 0 và ghi vào sổ cái.
+## Tính năng chính
 
-## 🛠 Yêu cầu hệ thống
+- Kế thừa: lớp `Account` trừu tượng, hai lớp con `Savings` và `Checking`.
+- `Savings`: có interest rate, không cho overdraft.
+- `Checking`: không có interest, có overdraft limit.
+- Nạp chồng toán tử `+` và `-` trên `Account` để nạp/rút tiền.
+- `CurrencyRegistry` quản lý tỷ giá theo 1 USD và tự động quy đổi giữa nhiều currency.
+- `Bank` lưu account bằng `std::map<std::string, std::unique_ptr<Account>>`.
+- `Transaction` ghi ledger cho các nghiệp vụ chính, bao gồm nhiều trường hợp thành công/thất bại.
+- `BankService` kiểm soát quyền `admin`/`user` và dùng `std::mutex` để serialize giao dịch.
+- Demo double-spend bằng thread thật qua menu 12.
+- Demo tỷ giá lỗi qua menu 13.
 
-- Trình biên dịch hỗ trợ **C++20** (`g++ ≥ 10` hoặc `clang++ ≥ 12`).
-- **GNU Make**.
-- Hệ điều hành: Linux / macOS / WSL / Windows (MinGW).
+## Yêu cầu hệ thống
 
-## 📦 Cài đặt & Biên dịch
+- Trình biên dịch hỗ trợ C++20, ví dụ `g++ >= 10` hoặc `clang++ >= 12`.
+- GNU Make.
+- Linux / macOS / WSL / Windows MinGW.
+
+## Cài đặt & biên dịch
 
 ```bash
-git clone https://github.com/<user>/ptit-cpp.git
+git clone https://github.com/Jonathn1001/ptit-cpp.git
 cd ptit-cpp/apex-banking
 make
 ```
 
 Kết quả: file thực thi `./apex`.
 
-Để chạy bộ test:
+Chạy chương trình:
+
+```bash
+make run
+```
+
+Chạy test:
+
 ```bash
 make test
 ```
 
-Dọn sạch:
+Dọn file build:
+
 ```bash
 make clean
 ```
 
-## ▶️ Chạy chương trình
+## Dữ liệu mẫu khi khởi động
 
-```bash
-./apex
+Chương trình seed sẵn:
+
+- Currency: `USD`, `VND`, `EUR`, `JPY`.
+- Account mẫu:
+  - `acc_001`: `Savings`, owner `Nguyễn Văn A`, balance 200 USD, interest rate 0.05.
+  - `acc_002`: `Checking`, owner `Trần Thị B`, balance 1,000,000 VND, overdraft limit 500,000 VND.
+- `admin`: vào trực tiếp bằng menu `Admin`.
+- `user`: đăng nhập bằng Account ID như `acc_001` hoặc `acc_002`.
+
+Lưu ý: phần auth trong đồ án là mô phỏng CLI, chưa triển khai password hashing, session token hoặc database user thật.
+
+## Menu chính
+
+```text
+1. Admin
+2. User
+3. Tạo user mới
+0. Thoát
 ```
 
-Chương trình khởi động menu tương tác với dữ liệu mẫu (4 loại tiền tệ
-USD/VND/EUR/JPY và 2 tài khoản mẫu `acc_001`, `acc_002`).
+Menu trong phiên `admin`/`user`:
 
-## 🎬 Demo các tình huống lỗi
+```text
+-- Account --
+1. Savings
+2. Checking
+3. Danh sách account
+4. Chi tiết account
 
-### 1. Double-Spend (Chi tiêu kép) — menu **12**
+-- Giao dịch --
+5. Nạp tiền
+6. Rút tiền
+7. Chuyển khoản
 
-```
-Phase 1 (BUGGY): Terminal A và B đều đọc balance = 100 trước khi ghi
-                 → cả hai tin rằng còn đủ tiền, cả hai đều rút 80
-                 → tài khoản bị trừ sai
-Phase 2 (FIXED): Dùng Bank::lock() / unlock() để nối tiếp thao tác
-                 → Terminal B bị từ chối với DoubleSpendDetected
-```
+-- Currency --
+8. Tỷ giá
+9. Cập nhật tỷ giá       (admin)
 
-### 2. Tỷ giá không hợp lệ — menu **13** (hoặc **9** với rate ≤ 0)
-
-```
-Thử đặt tỷ giá EUR = -1.5  →  ❌ InvalidRate: rate must be > 0
-Thử đặt tỷ giá JPY = 0     →  ❌ InvalidRate: rate must be > 0
-(Cả hai giao dịch FAILED được ghi vào sổ cái.)
-```
-
-## 🏗 Kiến trúc
-
-```
-┌─────────────────┐   owns   ┌──────────────────────────────────────┐
-│     Bank        │ ───────▶ │ std::map<id, unique_ptr<Account>>    │
-│ (facade)        │          └──────────────────────────────────────┘
-│                 │ ──▶ CurrencyRegistry (tỷ giá)
-│                 │ ──▶ std::vector<Transaction> (sổ cái)
-└─────────────────┘
-          ▲
-          │ dùng
-          │
-     ┌────┴────┐
-     │ main.cpp │   (menu CLI — không chứa logic nghiệp vụ)
-     └─────────┘
-
-    Account (abstract)   — có operator+, operator-
-       ▲         ▲
-       │         │
-    Savings   Checking
+-- Report & Demo --
+10. Ledger
+11. Lãi Savings
+12. Demo double-spend
+13. Demo tỷ giá lỗi      (admin)
+14. Danh sách user       (admin)
+0. Đăng xuất
 ```
 
-## 📚 Nạp chồng toán tử
+## Demo double-spend — menu 12
 
-| Toán tử | Ngữ nghĩa |
+Ví dụ với `acc_001` có 200 USD, nhập mỗi thread rút 150 USD:
+
+```text
+Terminal A: SUCCESS
+Terminal B: FAILED (không đủ số dư hoặc vượt hạn mức)
+```
+
+Hoặc ngược lại tùy thread nào chạy trước. Điểm quan trọng là hai giao dịch không cùng đọc/sửa balance một lúc vì `BankService` có `std::mutex`. Giao dịch vào sau phải kiểm tra lại balance sau giao dịch trước.
+
+## Demo tỷ giá lỗi — menu 13
+
+Chương trình thử:
+
+```text
+EUR = -1.5
+JPY = 0
+```
+
+Cả hai đều bị từ chối vì rate phải hữu hạn và > 0. Giao dịch lỗi được ghi vào ledger ở nghiệp vụ cập nhật tỷ giá.
+
+## Kiến trúc
+
+```text
+main.cpp
+   |
+   v
+BankService  -- kiểm soát quyền admin/user, mutex chống race
+   |
+   v
+Bank  -- quản lý account, ledger, currency registry
+   |
+   +--> CurrencyRegistry
+   +--> std::map<id, unique_ptr<Account>>
+   +--> std::vector<Transaction>
+
+Account (abstract)
+   |
+   +--> Savings
+   +--> Checking
+```
+
+## Nạp chồng toán tử
+
+| Toán tử | Ý nghĩa |
 |---|---|
-| `account + Money` | Nạp tiền (tự động quy đổi tiền tệ) |
-| `account - Money` | Rút tiền (tự động quy đổi + kiểm tra policy của loại tài khoản) |
+| `account + Money` | Nạp tiền, tự động quy đổi currency |
+| `account - Money` | Rút tiền, tự động quy đổi và kiểm tra policy của account |
 
-## 📂 Cấu trúc thư mục
+## Cấu trúc thư mục
 
-```
+```text
 apex-banking/
 ├── include/       # Header files (.h)
 ├── src/           # Implementation (.cpp)
-├── test/          # Unit tests (doctest)
+├── test/          # Test bằng assert
 ├── Makefile
+├── .gitignore
 └── README.md
 ```
 
-## 🧪 Testing
+## Một vài case test nhanh bằng menu
 
-Dự án dùng [doctest](https://github.com/doctest/doctest) — thư viện test
-header-only, được vendored sẵn trong `test/doctest.h`, không cần cài gì thêm.
+### Chặn amount = 0
 
-```bash
-make test
-# → 30 passed | 0 failed
+```text
+Admin -> 5. Nạp tiền
+Account ID: acc_001
+Số tiền: 0
+Currency: USD
 ```
 
-## 👤 Tác giả
+Kết quả: báo lỗi `số tiền giao dịch phải > 0`.
 
-PTIT — 2026..
+### Ledger interest đúng
+
+```text
+Admin -> 11. Lãi Savings
+Savings Account ID: acc_001
+Admin -> 10. Ledger
+```
+
+Với acc_001 ban đầu 200 USD, interest 5%, ledger ghi `10 USD` cho `APPLY_INTEREST`.
+
+### Admin tạo account và gán cho User
+
+```text
+Admin -> 1. Savings
+Owner: Nguyễn Văn C
+Currency gốc: USD
+Opening balance: 100
+Interest rate: 0.05
+Gán account này cho một User đăng nhập? y
+User ID: Enter để dùng Account ID mới
+```
+
+Sau đó có thể đăng xuất, chọn `User`, đăng nhập bằng Account ID mới.
+
+## Tác giả
+
+PTIT — 2026.
