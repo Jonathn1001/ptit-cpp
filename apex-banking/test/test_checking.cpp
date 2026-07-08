@@ -3,6 +3,8 @@
 #include "Currency.h"
 #include "Errors.h"
 
+#include <limits>
+
 namespace {
 CurrencyRegistry usdOnly() {
     CurrencyRegistry r;
@@ -40,4 +42,14 @@ TEST_CASE("Checking rejects a negative overdraft limit") {
     auto reg = usdOnly();
     CHECK_THROWS_AS(Checking("c1", "B", "USD", Money{100.0, "USD"}, &reg, -50.0),
                     BadInput);
+}
+
+TEST_CASE("Checking rejects withdrawal when available balance calculation overflows") {
+    auto reg = usdOnly();
+    const double max = std::numeric_limits<double>::max();
+    Checking c("c1", "B", "USD", Money{max, "USD"}, &reg, max);
+    CHECK_FALSE(c.canWithdraw(1.0));
+    Money withdraw{1.0, "USD"};
+    CHECK_THROWS_AS(c - withdraw, InsufficientFunds);
+    CHECK(c.getBalance() == max);
 }

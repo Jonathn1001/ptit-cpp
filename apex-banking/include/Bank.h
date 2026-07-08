@@ -6,6 +6,7 @@
 #include <iosfwd>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
@@ -15,6 +16,7 @@
  * The CLI talks to Bank and nothing else.
  */
 class Bank {
+    std::mutex bankMutex;
     std::map<std::string, std::unique_ptr<Account>> accounts;
     CurrencyRegistry registry;
     std::vector<Transaction> ledger;
@@ -32,8 +34,8 @@ public:
 
     Bank(const Bank&) = delete;
     Bank& operator=(const Bank&) = delete;
-    Bank(Bank&&) = default;
-    Bank& operator=(Bank&&) = default;
+    Bank(Bank&&) = delete;
+    Bank& operator=(Bank&&) = delete;       
 
     // --- account lifecycle ---
     /** Creates a new Savings account and records a CREATE_ACCOUNT transaction. */
