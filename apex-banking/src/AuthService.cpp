@@ -1,5 +1,5 @@
 #include "AuthService.h"
-
+#include <algorithm>
 #include <iostream>
 #include <utility>
 
@@ -13,7 +13,8 @@ User::User(std::string userId, std::string fullName, Role role)
       role_(role) {}
 
 bool User::owns(const std::string& accountId) const {
-    return std::find(accountIds_.begin(), accountIds_.end(), accountId) != accountIds_.end();
+    const auto it = std::find(accountIds_.begin(), accountIds_.end(), accountId);
+    return it != accountIds_.end();
 }
 
 void User::addAccountId(const std::string& accountId) {
@@ -29,9 +30,17 @@ bool AuthService::exists(const std::string& userId) const {
 User& AuthService::registerUser(const std::string& userId,
                                 const std::string& fullName,
                                 Role role) {
-    if (userId.empty()) throw BadInput("Account ID trống");
-    if (fullName.empty()) throw BadInput("họ tên trống");
-    if (exists(userId)) throw BadInput("Account ID đã tồn tại: " + userId);
+ if (userId.empty()) {
+    throw BadInput("Account ID trống");
+}
+
+if (fullName.empty()) {
+    throw BadInput("họ tên trống");
+}
+
+if (exists(userId)) {
+    throw BadInput("Account ID đã tồn tại: " + userId);
+}
 
     auto [it, inserted] = users_.emplace(
         userId,
@@ -43,18 +52,22 @@ User& AuthService::registerUser(const std::string& userId,
 
 User* AuthService::loginById(const std::string& userId) {
     auto it = users_.find(userId);
-    if (it != users_.end()) return &it->second;
+    if (it != users_.end()) {
+        return &it->second;
+    }
 
     // Cho phép đăng nhập bằng bất kỳ Account ID nào thuộc user.
     for (auto& [id, user] : users_) {
-        if (user.owns(userId)) return &user;
+        if (user.owns(userId)) {
+            return &user;
+        }
     }
 
     return nullptr;
 }
 
 const User* AuthService::findUser(const std::string& userId) const {
-    auto it = users_.find(userId);
+    const auto it = users_.find(userId);
     return it == users_.end() ? nullptr : &it->second;
 }
 
@@ -65,10 +78,12 @@ User* AuthService::findUser(const std::string& userId) {
 
 void AuthService::addAccountToUser(const std::string& userId, const std::string& accountId) {
     User* user = findUser(userId);
-    if (!user) throw BadInput("không có Account ID: " + userId);
+    if (!user) {
+        throw BadInput("không có Account ID: " + userId);
+    }
+
     user->addAccountId(accountId);
 }
-
 void AuthService::listUsers(std::ostream& os) const {
     if (users_.empty()) {
         os << " (chưa có user)\n";

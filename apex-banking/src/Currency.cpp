@@ -13,7 +13,7 @@ void CurrencyRegistry::setRate(const std::string& code, double rate) {
 }
 
 double CurrencyRegistry::getRate(const std::string& code) const {
-    auto it = rates.find(code);
+    const auto it = rates.find(code);
     if (it == rates.end()) {
         throw CurrencyUnknown("unknown currency: " + code);
     }
@@ -39,7 +39,7 @@ Money CurrencyRegistry::convert(const Money& from, const std::string& toCurrency
 }
 
 bool CurrencyRegistry::has(const std::string& code) const {
-    return rates.count(code) > 0;
+    return rates.find(code) != rates.end();
 }
 
 void CurrencyRegistry::list(std::ostream& os) const {

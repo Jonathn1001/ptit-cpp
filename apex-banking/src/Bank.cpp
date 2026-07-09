@@ -26,7 +26,7 @@ std::time_t Bank::now() { return std::time(nullptr); }
 // ----- lifecycle -----
 Account& Bank::createSavings(const std::string& owner, const std::string& currency,
                              const Money& opening, double interestRate) {
-    std::string id = allocAccountId();
+    const std::string id = allocAccountId();
     auto acc = std::make_unique<Savings>(id, owner, currency, opening, &registry, interestRate);
     Account& ref = *acc;
     accounts.emplace(id, std::move(acc));
@@ -37,7 +37,7 @@ Account& Bank::createSavings(const std::string& owner, const std::string& curren
 
 Account& Bank::createChecking(const std::string& owner, const std::string& currency,
                               const Money& opening, double overdraftLimit) {
-    std::string id = allocAccountId();
+    const std::string id = allocAccountId();
     auto acc = std::make_unique<Checking>(id, owner, currency, opening, &registry, overdraftLimit);
     Account& ref = *acc;
     accounts.emplace(id, std::move(acc));
@@ -47,14 +47,16 @@ Account& Bank::createChecking(const std::string& owner, const std::string& curre
 }
 
 Account* Bank::find(const std::string& id) {
-    auto it = accounts.find(id);
+    const auto it = accounts.find(id);
     return it == accounts.end() ? nullptr : it->second.get();
 }
 
 Account& Bank::require(const std::string& id) {
-    Account* a = find(id);
-    if (!a) throw AccountNotFound("no such account: " + id);
-    return *a;
+    Account* const account = find(id);
+    if (!account) {
+        throw AccountNotFound("no such account: " + id);
+    }
+    return *account;
 }
 
 // ----- movement -----
@@ -181,7 +183,11 @@ void Bank::setRate(const std::string& code, double rate) {
 
 // ----- queries -----
 void Bank::listAccounts(std::ostream& os) const {
-    if (accounts.empty()) { os << "  (no accounts)\n"; return; }
+    if (accounts.empty()) {
+        os << "  (no accounts)\n";
+        return;
+    }
+
     for (const auto& [id, ptr] : accounts) {
         ptr->print(os);
         os << "\n";
@@ -189,8 +195,14 @@ void Bank::listAccounts(std::ostream& os) const {
 }
 
 void Bank::printLedger(std::ostream& os) const {
-    if (ledger.empty()) { os << "  (ledger empty)\n"; return; }
-    for (const auto& tx : ledger) tx.print(os);
+    if (ledger.empty()) {
+        os << "  (ledger empty)\n";
+        return;
+    }
+
+    for (const auto& tx : ledger) {
+        tx.print(os);
+    }
 }
 
 // ----- locking -----
@@ -280,19 +292,29 @@ void Bank::simulateDoubleSpend(const std::string& accountId, double amount) {
     os << "Step 4. Terminal A unlock(" << accountId << ")\n";
 
     // Terminal B retries after unlock — should succeed IF balance still covers amount
-    try {
-        lock(accountId);
-        a - m;
+  bool terminalBRetryLocked = false;
+
+try {
+    lock(accountId);
+    terminalBRetryLocked = true;
+
+    a - m;
+
+    unlock(accountId);
+    terminalBRetryLocked = false;
+
+    os << "Step 5. Terminal B retry succeeded, balance=" << a.getBalance() << "\n";
+    log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::SUCCESS,
+                    accountId, "", m, "doublespend/fixed/TerminalB", now()));
+} catch (const BankError& e) {
+    if (terminalBRetryLocked) {
         unlock(accountId);
-        os << "Step 5. Terminal B retry succeeded, balance=" << a.getBalance() << "\n";
-        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::SUCCESS,
-                        accountId, "", m, "doublespend/fixed/TerminalB", now()));
-    } catch (const BankError& e) {
-        unlock(accountId);
-        os << "Step 5. Terminal B retry FAILED: " << e.what() << "\n";
-        log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED,
-                        accountId, "", m,
-                        std::string("doublespend/fixed/B/") + e.what(), now()));
     }
+
+    os << "Step 5. Terminal B retry FAILED: " << e.what() << "\n";
+    log(Transaction(allocTxId(), TxType::WITHDRAW, TxStatus::FAILED,
+                    accountId, "", m,
+                    std::string("doublespend/fixed/B/") + e.what(), now()));
+}
     os << "Phase 2 final balance: " << a.getBalance() << "\n\n";
 }

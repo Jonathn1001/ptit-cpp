@@ -43,9 +43,20 @@ void Transaction::print(std::ostream& os) const {
        << "  " << std::setw(14) << std::left << typeName(type_)
        << " " << std::setw(7) << statusName(status_)
        << std::right;
-    if (!fromId_.empty()) os << "  from=" << fromId_;
-    if (!toId_.empty())   os << "  to="   << toId_;
-    if (!amount_.currency.empty()) os << "  amt=" << amount_;
-    if (!note_.empty())   os << "  (" << note_ << ")";
+  if (!fromId_.empty()) {
+    os << "  from=" << fromId_;
+}
+
+if (!toId_.empty()) {
+    os << "  to=" << toId_;
+}
+
+if (!amount_.currency.empty()) {
+    os << "  amt=" << amount_;
+}
+
+if (!note_.empty()) {
+    os << "  (" << note_ << ")";
+}
     os << "\n";
 }
