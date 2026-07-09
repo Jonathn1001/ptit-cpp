@@ -152,6 +152,17 @@ double BankService::accountBalance(const User& actor, const std::string& account
     return bank_.require(accountId).getBalance();
 }
 
+void Bank::showSystemReport(std::ostream& os) const {
+    double totalUSD = 0;
+    for (const auto& [id, acc] : accounts) {
+        // Tự động quy đổi về USD để báo cáo tổng thể thông qua Registry [5]
+        totalUSD += registry.convert({acc->getBalance(), acc->getCurrency()}, "USD").amount;
+    }
+    os << "--- Báo cáo hệ thống ---\n";
+    os << "Tổng số tài khoản: " << accounts.size() << "\n";
+    os << "Tổng tài sản quy đổi (USD): " << totalUSD << "\n";
+}
+
 void BankService::demoConcurrentWithdraw(const User& actor,
                                          const std::string& accountId,
                                          double amount,
