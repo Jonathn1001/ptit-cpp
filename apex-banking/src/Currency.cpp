@@ -2,17 +2,13 @@
 #include "Errors.h"
 #include <ostream>
 #include <string>
-
-namespace {
-void ensurePositiveRate(double rate) {
-    if (rate <= 0.0) {
-        throw InvalidRate("rate must be > 0 (got " + std::to_string(rate) + ")");
-    }
-}
-}
+#include <cmath>
 
 void CurrencyRegistry::setRate(const std::string& code, double rate) {
-    ensurePositiveRate(rate);
+    if (!std::isfinite(rate) || rate <= 0.0) {
+        throw InvalidRate("rate must be finite and > 0 (got " + std::to_string(rate) + ")");
+    }
+
     rates[code] = rate;
 }
 
@@ -25,11 +21,21 @@ double CurrencyRegistry::getRate(const std::string& code) const {
 }
 
 Money CurrencyRegistry::convert(const Money& from, const std::string& toCurrency) const {
-    const double fromRate = getRate(from.currency);
-    const double toRate = getRate(toCurrency);
-    const double amountInBase = from.amount / fromRate;
+    if (!std::isfinite(from.amount)) {
+        throw BadInput("amount must be finite");
+    }
 
-    return Money{amountInBase * toRate, toCurrency};
+    double fromRate = getRate(from.currency);
+    double toRate = getRate(toCurrency);
+
+    double amountInBase = from.amount / fromRate;
+    double converted = amountInBase * toRate;
+
+    if (!std::isfinite(converted)) {
+        throw BadInput("converted amount must be finite");
+    }
+
+    return Money{converted, toCurrency};
 }
 
 bool CurrencyRegistry::has(const std::string& code) const {

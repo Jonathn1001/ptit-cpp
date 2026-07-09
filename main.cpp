@@ -160,18 +160,8 @@ User* getBuiltInAdmin(AuthService& auth) {
     }
     return admin;
 }
-void assignAdminCreatedAccountToUser(AuthService& auth,
-                                     const std::string& accountId,
-                                     const std::string& fullName) {
-    if (!auth.exists(accountId)) {
-        User& user = auth.registerUser(accountId, fullName, Role::USER);
-        user.addAccountId(accountId);
-        return;
-    }
 
-    auth.addAccountToUser(accountId, accountId);
-}
-std::string doCreateSavings(BankService& service, User& actor, AuthService* auth = nullptr) {
+std::string doCreateSavings(BankService& service, User& actor) {
     std::string owner;
     if (actor.isAdmin()) {
         owner = readLine("Owner: ");
@@ -185,15 +175,12 @@ std::string doCreateSavings(BankService& service, User& actor, AuthService* auth
     double rate = readDouble("Interest rate (0.05 = 5%): ");
 
     std::string id = service.createSavings(actor, owner, cur, Money{amt, cur}, rate);
-    if (actor.isAdmin() && auth != nullptr) {
-    assignAdminCreatedAccountToUser(*auth, id, owner);
-}
     std::cout << "Tạo Savings thành công. Account ID = " << id << "\n";
     service.printAccount(actor, id, std::cout);
     return id;
 }
 
-std::string doCreateChecking(BankService& service, User& actor, AuthService* auth = nullptr) {
+std::string doCreateChecking(BankService& service, User& actor) {
     std::string owner;
     if (actor.isAdmin()) {
         owner = readLine("Owner: ");
@@ -207,8 +194,6 @@ std::string doCreateChecking(BankService& service, User& actor, AuthService* aut
     double od = readDouble("Overdraft limit: ");
 
     std::string id = service.createChecking(actor, owner, cur, Money{amt, cur}, od);
-    if (actor.isAdmin() && auth != nullptr) {
-    assignAdminCreatedAccountToUser(*auth, id, owner);}
     std::cout << "Tạo Checking thành công. Account ID = " << id << "\n";
     service.printAccount(actor, id, std::cout);
     return id;
@@ -309,7 +294,7 @@ void doBadRateDemo(BankService& service, const User& actor) {
     std::cout << "Bank vẫn ghi SET_RATE thất bại vào ledger.\n";
 }
 
-void adminLoop(AuthService& auth, BankService& service, User& currentUser) {
+void adminLoop(BankService& service, User& currentUser) {
     while (true) {
         printAdminMenu(currentUser);
 
@@ -317,8 +302,8 @@ void adminLoop(AuthService& auth, BankService& service, User& currentUser) {
             int choice = readMenuChoice();
             switch (choice) {
             case 0: std::cout << "Đăng xuất admin. \n"; return;
-            case 1: doCreateSavings(service, currentUser, &auth); break;
-            case 2: doCreateChecking(service, currentUser, &auth); break;
+            case 1: doCreateSavings(service, currentUser); break;
+            case 2: doCreateChecking(service, currentUser); break;
             case 3: service.printVisibleAccounts(currentUser, std::cout); break;
             case 4: doShowAccount(service, currentUser); break;
             case 5: doDeposit(service, currentUser); break;
@@ -433,7 +418,7 @@ void adminEntry(AuthService& auth, BankService& service) {
 
             User* admin = getBuiltInAdmin(auth);
             std::cout << "Vào admin.\n";
-            adminLoop(auth,service, *admin);
+            adminLoop(service, *admin);
         } catch (const BankError& e) {
             std::cout << "Lỗi: " << e.what() << "\n";
         } catch (const std::exception& e) {
