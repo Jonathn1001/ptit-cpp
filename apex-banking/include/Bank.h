@@ -80,6 +80,9 @@ public:
     void printLedger(std::ostream&) const;
     const std::vector<Transaction>& ledgerEntries() const { return ledger; }
 
+    /** Prints a system-wide summary report to `os`. */
+    void showSystemReport(std::ostream& os) const;
+
     // --- double-spend locking primitives ---
     /** Marks account `id` as locked; locked accounts cannot be debited. */
     void lock(const std::string& id);
